@@ -40,8 +40,8 @@ android {
         applicationId = "com.momo.tunit"
         minSdk = 19
         targetSdk = 33
-        versionCode = 99
-        versionName = "1.8.17"
+        versionCode = 100
+        versionName = "1.8.18"
 
         // 服务器地址（构建期注入）：真实 IP 只放在被 .gitignore 排除的 app/server.properties；
         // 公开源码中 BuildConfig.SERVER_HOST 仅编译为占位符 0.0.0.0，避免泄露真实服务器地址。

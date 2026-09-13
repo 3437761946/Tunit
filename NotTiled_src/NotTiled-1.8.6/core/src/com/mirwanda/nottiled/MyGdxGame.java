@@ -34713,13 +34713,16 @@ private void refreshGenerator(){
         }
     }
 
-    /** 启动时后台静默检测：有更新仅点亮「检查更新」按钮上的红点，不自动弹窗；失败不打扰。 */
+    /** 进入应用时后台检测更新：每次进入都检查，有更高版本则自动弹出更新窗口提示；失败不打扰。 */
     private void checkUpdateSilently() {
         java.util.List<ServerEntry> cands = updateCandidateEntries();
         if (cands.isEmpty()) return;
         checkUpdateCandidates( cands, true, new Runnable(){ public void run(){
-            // 静默检测：只刷新「检查更新」按钮上的红点，不自动弹窗（避免每次进入软件都被弹窗打扰）
+            // 每次进入软件均检测更新：有新版本自动弹出更新窗口；无更新仅刷新「检查更新」红点
             refreshUpdateDot();
+            if (updateAvailable) {
+                try { showUpdateDialog(); } catch (Exception ignore) {}
+            }
         } } );
     }
 
