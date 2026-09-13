@@ -78,7 +78,7 @@ public class ReNotTiledServer {
 
     // ---------------- 常驻房间 / 投票 常量 ----------------
     /** 常驻房间名（无房主，始终在线；不占用也不受 maxRooms 限制）。 */
-    static final String[] LOBBY_ROOMS = {"大厅1", "大厅2", "大厅3", "大厅4", "大厅5"};
+    static final String[] LOBBY_ROOMS = {"大厅1", "大厅2", "大厅3"};
     /** 投票超时（毫秒）。 */
     static final long VOTE_TIMEOUT_MS = 60_000L;
 
