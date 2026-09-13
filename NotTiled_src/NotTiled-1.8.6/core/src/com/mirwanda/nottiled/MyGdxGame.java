@@ -33156,69 +33156,139 @@ private void refreshGenerator(){
     }
 
     // 计算当前地图内容指纹（尺寸/朝向/图集(轻量)/各图层结构+内容/对象/属性）。两端一致则指纹一致。
-    private String computeMapSignature(){
-        long h = 0xcbf29ce484222325L;
-        h = fnvUpd(h, Tw); h = fnvUpd(h, Th); h = fnvUpd(h, Tsw); h = fnvUpd(h, Tsh);
-        h = fnvStr(h, orientation); h = fnvStr(h, renderorder);
-        // 图集（轻量：只取影响 gid 解析与渲染的元数据）
+    // 返回“总指纹#分项指纹”的明细串：总指纹用于是否同步的判定；分项用于定位“到底哪里不一致”。
+    // 格式：<总16hex>#H<hdr16hex>,T<tsets16hex>,L<i>m<meta16hex>c<content16hex>...
+    private String computeMapSignatureDetail(){
+        // ---- 头部：尺寸/朝向/渲染顺序 ----
+        long hh = 0xcbf29ce484222325L;
+        hh = fnvUpd(hh, Tw); hh = fnvUpd(hh, Th); hh = fnvUpd(hh, Tsw); hh = fnvUpd(hh, Tsh);
+        hh = fnvStr(hh, orientation); hh = fnvStr(hh, renderorder);
+        // ---- 图集（轻量：只取影响 gid 解析与渲染的元数据） ----
+        long th = 0xcbf29ce484222325L;
         int tsc = (tilesets == null) ? 0 : tilesets.size();
-        h = fnvUpd(h, tsc);
+        th = fnvUpd(th, tsc);
         if (tilesets != null) for (tileset ts : tilesets) {
-            if (ts == null) { h = fnvUpd(h, 0x7L); continue; }
-            h = fnvUpd(h, ts.getFirstgid());
-            h = fnvStr(h, ts.getName());
-            h = fnvStr(h, ts.getSource());
-            h = fnvUpd(h, ts.getTilecount());
-            h = fnvUpd(h, ts.getTilewidth()); h = fnvUpd(h, ts.getTileheight());
-            h = fnvUpd(h, ts.getMargin()); h = fnvUpd(h, ts.getSpacing());
-            h = fnvUpd(h, ts.getColumns());
+            if (ts == null) { th = fnvUpd(th, 0x7L); continue; }
+            th = fnvUpd(th, ts.getFirstgid());
+            th = fnvStr(th, ts.getName());
+            th = fnvStr(th, ts.getSource());
+            th = fnvUpd(th, ts.getTilecount());
+            th = fnvUpd(th, ts.getTilewidth()); th = fnvUpd(th, ts.getTileheight());
+            th = fnvUpd(th, ts.getMargin()); th = fnvUpd(th, ts.getSpacing());
+            th = fnvUpd(th, ts.getColumns());
         }
+        // ---- 逐图层：元数据(meta) 与 内容(content) 分开算，便于定位 ----
         int lc = (layers == null) ? 0 : layers.size();
-        h = fnvUpd(h, lc);
-        if (layers != null) for (layer l : layers) {
-            if (l == null) { h = fnvUpd(h, 0x9L); continue; }
-            h = fnvUpd(h, (l.getType() == null) ? -1L : (long) l.getType().ordinal());
-            h = fnvStr(h, l.getName());
-            h = fnvUpd(h, l.isVisible() ? 1L : 0L);
-            h = fnvUpd(h, qz(l.getOpacity()));
-            h = fnvUpd(h, qz(l.getOffsetX())); h = fnvUpd(h, qz(l.getOffsetY()));
-            h = fnvProps(h, l.getProperties());
-            if (l.getType() == layer.Type.TILE) {
-                java.util.List<Long> ss = l.getStr();
-                java.util.List<Integer> tt = l.getTset();
-                java.util.List<Integer> tl = l.getTile();
-                h = fnvUpd(h, (ss == null) ? 0 : ss.size());
-                if (ss != null) for (Long v : ss) h = fnvUpd(h, (v == null) ? 0L : v);
-                h = fnvUpd(h, (tt == null) ? 0 : tt.size());
-                if (tt != null) for (Integer v : tt) h = fnvUpd(h, (v == null) ? 0L : v);
-                h = fnvUpd(h, (tl == null) ? 0 : tl.size());
-                if (tl != null) for (Integer v : tl) h = fnvUpd(h, (v == null) ? 0L : v);
-            } else if (l.getType() == layer.Type.OBJECT) {
-                java.util.List<obj> os = l.getObjects();
-                h = fnvUpd(h, (os == null) ? 0 : os.size());
-                if (os != null) for (obj o : os) {
-                    if (o == null) { h = fnvUpd(h, 0x11L); continue; }
-                    h = fnvUpd(h, o.getId());
-                    h = fnvUpd(h, o.getGid());                       // 瓦片对象 gid：缺失会导致仅此项不同却判为已同步
-                    h = fnvUpd(h, (o.isWrap() ? 1L : 0L));           // wrap 标记
-                    h = fnvUpd(h, qz(o.getX())); h = fnvUpd(h, qz(o.getY()));
-                    h = fnvUpd(h, qz(o.getW())); h = fnvUpd(h, qz(o.getH()));
-                    h = fnvUpd(h, qz(o.getRotation()));
-                    h = fnvStr(h, o.getName()); h = fnvStr(h, o.getType());
-                    h = fnvStr(h, o.getShape()); h = fnvStr(h, o.getText());
-                    java.util.List<com.badlogic.gdx.math.Vector2> pts = o.getPoints();
-                    h = fnvUpd(h, (pts == null) ? 0 : pts.size());
-                    if (pts != null) for (com.badlogic.gdx.math.Vector2 p2 : pts) {
-                        if (p2 != null) { h = fnvUpd(h, qz(p2.x)); h = fnvUpd(h, qz(p2.y)); }
+        long[] lmeta = new long[lc];
+        long[] lcont = new long[lc];
+        for (int li = 0; li < lc; li++) {
+            layer l = (layers == null) ? null : layers.get(li);
+            long m = 0xcbf29ce484222325L;
+            long c = 0xcbf29ce484222325L;
+            if (l == null) { m = fnvUpd(m, 0x9L); }
+            else {
+                m = fnvUpd(m, (l.getType() == null) ? -1L : (long) l.getType().ordinal());
+                m = fnvStr(m, l.getName());
+                m = fnvUpd(m, l.isVisible() ? 1L : 0L);
+                m = fnvUpd(m, qz(l.getOpacity()));
+                m = fnvUpd(m, qz(l.getOffsetX())); m = fnvUpd(m, qz(l.getOffsetY()));
+                m = fnvProps(m, l.getProperties());
+                if (l.getType() == layer.Type.TILE) {
+                    java.util.List<Long> ss = l.getStr();
+                    java.util.List<Integer> tt = l.getTset();
+                    java.util.List<Integer> tl = l.getTile();
+                    c = fnvUpd(c, (ss == null) ? 0 : ss.size());
+                    if (ss != null) for (Long v : ss) c = fnvUpd(c, (v == null) ? 0L : v);
+                    c = fnvUpd(c, (tt == null) ? 0 : tt.size());
+                    if (tt != null) for (Integer v : tt) c = fnvUpd(c, (v == null) ? 0L : v);
+                    c = fnvUpd(c, (tl == null) ? 0 : tl.size());
+                    if (tl != null) for (Integer v : tl) c = fnvUpd(c, (v == null) ? 0L : v);
+                } else if (l.getType() == layer.Type.OBJECT) {
+                    java.util.List<obj> os = l.getObjects();
+                    c = fnvUpd(c, (os == null) ? 0 : os.size());
+                    if (os != null) for (obj o : os) {
+                        if (o == null) { c = fnvUpd(c, 0x11L); continue; }
+                        c = fnvUpd(c, o.getId());
+                        c = fnvUpd(c, o.getGid());                       // 瓦片对象 gid：缺失会导致仅此项不同却判为已同步
+                        c = fnvUpd(c, (o.isWrap() ? 1L : 0L));           // wrap 标记
+                        c = fnvUpd(c, qz(o.getX())); c = fnvUpd(c, qz(o.getY()));
+                        c = fnvUpd(c, qz(o.getW())); c = fnvUpd(c, qz(o.getH()));
+                        c = fnvUpd(c, qz(o.getRotation()));
+                        c = fnvStr(c, o.getName()); c = fnvStr(c, o.getType());
+                        c = fnvStr(c, o.getShape()); c = fnvStr(c, o.getText());
+                        java.util.List<com.badlogic.gdx.math.Vector2> pts = o.getPoints();
+                        c = fnvUpd(c, (pts == null) ? 0 : pts.size());
+                        if (pts != null) for (com.badlogic.gdx.math.Vector2 p2 : pts) {
+                            if (p2 != null) { c = fnvUpd(c, qz(p2.x)); c = fnvUpd(c, qz(p2.y)); }
+                        }
+                        c = fnvProps(c, o.getProperties());
                     }
-                    h = fnvProps(h, o.getProperties());
+                } else if (l.getType() == layer.Type.IMAGE) {
+                    c = fnvStr(c, l.getImage());
+                    c = fnvUpd(c, l.getImagewidth()); c = fnvUpd(c, l.getImageheight());
                 }
-            } else if (l.getType() == layer.Type.IMAGE) {
-                h = fnvStr(h, l.getImage());
-                h = fnvUpd(h, l.getImagewidth()); h = fnvUpd(h, l.getImageheight());
             }
+            lmeta[li] = m; lcont[li] = c;
         }
-        return java.lang.String.format("%016x", h);
+        // ---- 总指纹：与分项同源，保证“总指纹不同 ⇔ 至少一个分项不同” ----
+        long h = 0xcbf29ce484222325L;
+        h = fnvUpd(h, hh); h = fnvUpd(h, th); h = fnvUpd(h, lc);
+        for (int li = 0; li < lc; li++) { h = fnvUpd(h, lmeta[li]); h = fnvUpd(h, lcont[li]); }
+        StringBuilder sb = new StringBuilder(64 + lc * 40);
+        sb.append(java.lang.String.format("%016x", h)).append('#');
+        sb.append('H').append(java.lang.String.format("%016x", hh));
+        sb.append(",T").append(java.lang.String.format("%016x", th));
+        for (int li = 0; li < lc; li++) {
+            sb.append(",L").append(li).append('m').append(java.lang.String.format("%016x", lmeta[li]))
+              .append('c').append(java.lang.String.format("%016x", lcont[li]));
+        }
+        return sb.toString();
+    }
+
+    // 仅取总指纹（兼容旧调用）
+    private String computeMapSignature(){
+        String d = computeMapSignatureDetail();
+        int i = d.indexOf('#');
+        return (i > 0) ? d.substring(0, i) : d;
+    }
+
+    // 比较两份“指纹明细串”，返回人类可读的差异项（如“地图头/图集元数据/图层#3 元数据/图层#3 内容”）
+    private String diffMapSignatureDetail(String selfDetail, String otherDetail){
+        try {
+            if (selfDetail == null || otherDetail == null) return "";
+            int si = selfDetail.indexOf('#'); int oi = otherDetail.indexOf('#');
+            if (si <= 0 || oi <= 0) return "对方为旧版本(无分项)";
+            String[] a = selfDetail.substring(si + 1).split(",");
+            String[] b = otherDetail.substring(oi + 1).split(",");
+            StringBuilder sb = new StringBuilder();
+            int n = Math.max(a.length, b.length);
+            for (int i = 0; i < n; i++) {
+                String x = (i < a.length) ? a[i] : "";
+                String y = (i < b.length) ? b[i] : "";
+                if (x.equals(y)) continue;
+                String label;
+                if (x.startsWith("H") || y.startsWith("H")) label = "地图头(尺寸/朝向)";
+                else if (x.startsWith("T") || y.startsWith("T")) label = "图集元数据";
+                else if (x.startsWith("L") && y.startsWith("L")) {
+                    int xm = x.indexOf('m'), xc = x.indexOf('c');
+                    int ym = y.indexOf('m'), yc = y.indexOf('c');
+                    String xi = (xm > 1) ? x.substring(1, xm) : "?";
+                    String xmeta = (xm >= 0 && xc > xm) ? x.substring(xm + 1, xc) : "";
+                    String xcont = (xc >= 0) ? x.substring(xc + 1) : "";
+                    String ymeta = (ym >= 0 && yc > ym) ? y.substring(ym + 1, yc) : "";
+                    String ycont = (yc >= 0) ? y.substring(yc + 1) : "";
+                    boolean md = !xmeta.equals(ymeta);
+                    boolean cd = !xcont.equals(ycont);
+                    if (md && cd) label = "图层#" + xi + " 元数据+内容";
+                    else if (md) label = "图层#" + xi + " 元数据(名称/显隐/透明度/偏移/属性)";
+                    else label = "图层#" + xi + " 内容(瓦片/对象)";
+                } else label = "分项#" + i;
+                if (sb.length() > 0) sb.append('、');
+                sb.append(label);
+                if (sb.length() > 160) { sb.append("…"); break; }
+            }
+            return sb.toString();
+        } catch (Exception e) { return ""; }
     }
 
     // 发起一次全房地图同步检测（manual=true 为手动按钮触发，结果总是弹窗；false 为自动自检，仅在不一致时提示）
@@ -33235,7 +33305,7 @@ private void refreshGenerator(){
             mapCheckQuietStart = !isEditInFlight() && (System.currentTimeMillis() - lastEditActivityMs >= AUTO_MAP_CHECK_SETTLE_MS);
             mapCheckDeadline = System.currentTimeMillis() + 4000L;
             synchronized (mapCheckResults) { mapCheckResults.clear(); }
-            mapCheckSelfHash = computeMapSignature();
+            mapCheckSelfHash = computeMapSignatureDetail();
             command cc = new command();
             cc.command = "mapCheck";
             cc.from = myID;
@@ -33253,7 +33323,7 @@ private void refreshGenerator(){
     private void replyMapHash(){
         try {
             if (!isClient || (!isCreateRoom && !isJoinRoom)) return;
-            final String h = computeMapSignature();
+            final String h = computeMapSignatureDetail();
             command r = new command();
             r.command = "mapHash";
             r.from = myID;
@@ -33267,7 +33337,7 @@ private void refreshGenerator(){
     private void finishMapSyncCheck(){
         mapCheckActive = false;
         // 收口时重新计算本端指纹，纳入检测窗口内刚落地的远端操作，降低瞬时误报
-        try { mapCheckSelfHash = computeMapSignature(); } catch (Exception ignore) {}
+        try { mapCheckSelfHash = computeMapSignatureDetail(); } catch (Exception ignore) {}
         // 本轮是否为“可信（静默）轮”：发起时静默 + 收口时仍静默。非可信轮只作参考，不作为“不同步”证据。
         boolean conclusive = mapCheckQuietStart
                 && !isEditInFlight()
@@ -33279,6 +33349,17 @@ private void refreshGenerator(){
                 if (e.getValue() == null || e.getValue().isEmpty()) continue;
                 compared++;
                 if (!e.getValue().equals(mapCheckSelfHash)) { mismatch++; diffMembers.add(e.getKey()); }
+            }
+        }
+        // 诊断：逐成员给出“哪一部分不一致”（地图头/图集/某图层 元数据或内容），只写日志不弹状态，便于两端日志对照定位真因
+        if (mismatch > 0) {
+            synchronized (mapCheckResults) {
+                for (java.util.Map.Entry<String,String> e : mapCheckResults.entrySet()) {
+                    if (e.getValue() == null || e.getValue().isEmpty()) continue;
+                    if (e.getValue().equals(mapCheckSelfHash)) continue;
+                    String d = diffMapSignatureDetail(mapCheckSelfHash, e.getValue());
+                    logNetQuiet("[C] 同步检测明细：" + e.getKey() + " 与本地差异 -> " + (d.isEmpty() ? "未知" : d));
+                }
             }
         }
         boolean manual = mapCheckManual;
@@ -33308,7 +33389,17 @@ private void refreshGenerator(){
             logNet("[C] 同步检测：检测到 " + mismatch + " 名成员地图不一致（" + who + "）。" + tip);
             uiLog("[C] ⚠ 地图不同步：" + who + "。" + tip);
             setSyncReminder(true, mismatch);
-            msgbox("检测到地图不同步！\n与 " + mismatch + " 名成员的地图不一致：\n" + who + "\n\n" + tip);
+            String mdetail = "";
+            synchronized (mapCheckResults) {
+                for (java.util.Map.Entry<String,String> e : mapCheckResults.entrySet()) {
+                    if (e.getValue() == null || e.getValue().isEmpty()) continue;
+                    if (e.getValue().equals(mapCheckSelfHash)) continue;
+                    mdetail = diffMapSignatureDetail(mapCheckSelfHash, e.getValue());
+                    break;
+                }
+            }
+            msgbox("检测到地图不同步！\n与 " + mismatch + " 名成员的地图不一致：\n" + who
+                    + (mdetail.isEmpty() ? "" : "\n\n差异定位：" + mdetail) + "\n\n" + tip);
             return;
         }
         // 自动自检：非静默轮（起止期间仍有编辑/改动在途）视为不可信，直接丢弃、不计入连续确认。
