@@ -634,7 +634,7 @@ public class ReNotTiledServer {
 
     /** 防止限流表无限增长：过大时清理已过窗口的空 IP 记录。须在 httpLock 内调用。 */
     private void trimHttpWindows(long now) {
-        if (httpReqWindow.size() > 512) {
+        if (!httpReqWindow.isEmpty()) {
             Iterator<Map.Entry<String, Deque<Long>>> it = httpReqWindow.entrySet().iterator();
             while (it.hasNext()) {
                 Map.Entry<String, Deque<Long>> e = it.next();
@@ -643,7 +643,7 @@ public class ReNotTiledServer {
                 if (dq.isEmpty()) it.remove();
             }
         }
-        if (httpApkWindow.size() > 512) {
+        if (!httpApkWindow.isEmpty()) {
             Iterator<Map.Entry<String, Deque<Long>>> it = httpApkWindow.entrySet().iterator();
             while (it.hasNext()) {
                 Map.Entry<String, Deque<Long>> e = it.next();
@@ -2111,8 +2111,8 @@ public class ReNotTiledServer {
                     settleVoteLocked(v.room, k, false, "timeout");
                 }
             }
-            // 防止 ipNewConns 无限膨胀：定期清掉早已过窗口的空 IP 记录（不影响正在限速的 IP）
-            if (ipNewConns.size() > 256) {
+            // 4) 限流表清理：每次清扫都清掉早已过窗口的空 IP 记录（不影响正在限速的 IP），及时释放内存
+            if (!ipNewConns.isEmpty()) {
                 Iterator<Map.Entry<String, Deque<Long>>> it = ipNewConns.entrySet().iterator();
                 while (it.hasNext()) {
                     Map.Entry<String, Deque<Long>> en = it.next();
@@ -2121,7 +2121,12 @@ public class ReNotTiledServer {
                     if (dq.isEmpty()) it.remove();
                 }
             }
+            // 5) 内存回收：及时释放「已无成员的房间」残留的附属状态，避免随运行时间累积
+            reclaimEmptyRoomStateLocked();
         }
+        // 更新 / OTA 限流表同样每秒清理过期记录，及时把内存交还 GC（原逻辑仅在表过大时才清理）
+        synchronized (httpLock) { trimHttpWindows(now); }
+        synchronized (otaLock) { trimOtaWindows(now); }
         // 锁外执行网络发送 / 断开，避免长时间占用锁
         for (Connection cc : toKick) {
             try {
@@ -2138,6 +2143,40 @@ public class ReNotTiledServer {
                 log("[S] 房间回收(" + d[1] + ")，房间已解散: " + d[0]);
                 broadcastRoomList();
             }
+        }
+    }
+
+    /**
+     * 内存回收：把「当前已无成员」的房间所残留的附属状态及时清掉，避免其随运行时间累积占用堆内存。
+     * 覆盖禁编名单、推送授权、待审批申请、进行中投票；常驻房空房时额外清掉密码与地图名缓存。
+     * 须在持有 lock 时调用。
+     */
+    private void reclaimEmptyRoomStateLocked() {
+        // 常驻房：空房即清空其全部附属缓存（与「空房不显示地图名 / 密码」的语义保持一致）
+        for (String lr : LOBBY_ROOMS) {
+            if (!roomMembers(lr).isEmpty()) continue;
+            String rk = normRoom(lr);
+            roomBanned.remove(rk);
+            pushGrants.remove(rk);
+            pendingApply.remove(rk);
+            roomVotes.remove(rk);
+            lobbyPass.remove(rk);
+            lobbyMap.remove(rk);
+        }
+        // 自建房：兜底清理「已无成员」房间的附属状态（正常解散路径已清，这里防止异常路径残留）
+        pruneKeysOfEmptyRooms(roomBanned);
+        pruneKeysOfEmptyRooms(pushGrants);
+        pruneKeysOfEmptyRooms(pendingApply);
+        pruneKeysOfEmptyRooms(roomVotes);
+    }
+
+    /** 移除所有「对应房间当前已无成员」的键（须在持有 lock 时调用）。 */
+    private void pruneKeysOfEmptyRooms(Map<String, ?> map) {
+        if (map == null || map.isEmpty()) return;
+        Iterator<String> it = map.keySet().iterator();
+        while (it.hasNext()) {
+            String rk = it.next();
+            if (rk == null || roomMembers(rk).isEmpty()) it.remove();
         }
     }
 
@@ -2550,7 +2589,7 @@ public class ReNotTiledServer {
 
     /** 防止 OTA 限流表无限增长：过大时清理已过窗口的空 IP 记录。须在 otaLock 内调用。 */
     private void trimOtaWindows(long now) {
-        if (otaReqWindow.size() > 512) {
+        if (!otaReqWindow.isEmpty()) {
             Iterator<Map.Entry<String, Deque<Long>>> it = otaReqWindow.entrySet().iterator();
             while (it.hasNext()) {
                 Map.Entry<String, Deque<Long>> e = it.next();
@@ -2559,7 +2598,7 @@ public class ReNotTiledServer {
                 if (dq.isEmpty()) it.remove();
             }
         }
-        if (otaApkWindow.size() > 512) {
+        if (!otaApkWindow.isEmpty()) {
             Iterator<Map.Entry<String, Deque<Long>>> it = otaApkWindow.entrySet().iterator();
             while (it.hasNext()) {
                 Map.Entry<String, Deque<Long>> e = it.next();
