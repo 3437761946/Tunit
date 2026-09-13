@@ -31537,7 +31537,7 @@ private void refreshGenerator(){
                     // 留在列表页，等 accepted/rejected 结果再跳转
                 } else {
                     // 房间列表不弹窗打扰：未选中时仅写网络日志
-                    logNet( "[C] 请先在列表中选择一个房间。" );
+                    logNetQuiet( "[C] 请先在列表中选择一个房间。" );
                 }
             }
         });
@@ -31558,7 +31558,7 @@ private void refreshGenerator(){
                     // 留在列表页，等房主审批结果再跳转
                 } else {
                     // 房间列表不弹窗打扰：未选中时仅写网络日志
-                    logNet( "[C] 请先在列表中选择一个房间。" );
+                    logNetQuiet( "[C] 请先在列表中选择一个房间。" );
                 }
             }
         });
@@ -33823,7 +33823,7 @@ private void refreshGenerator(){
             c.command = "roomListRequest";
             c.from = myID;
             client.sendTCP(c);
-            logNet( "[C] 正在请求房间列表..." );
+            logNetQuiet( "[C] 正在请求房间列表..." );
         } catch (Exception e) {}
     }
 
@@ -34379,9 +34379,9 @@ private void refreshGenerator(){
     /** 聚合刷新：依次探针所有可用服务器，合并房间列表（带来源标记）回 UI。 */
     private void refreshRoomListAggregated() {
         long now = System.currentTimeMillis();
-        if (now - lastRoomListRefreshMs < 2000L) { logNet("[C] 刷新过于频繁，请稍候。"); return; }
+        if (now - lastRoomListRefreshMs < 2000L) { logNetQuiet("[C] 刷新过于频繁，请稍候。"); return; }
         lastRoomListRefreshMs = now;
-        logNet("[C] 正在汇总各服务器房间列表...");
+        logNetQuiet("[C] 正在汇总各服务器房间列表...");
         final java.util.List<ServerEntry> snap = new ArrayList<ServerEntry>(serverEntries);
         new Thread(new Runnable(){
             public void run(){
@@ -34403,7 +34403,7 @@ private void refreshGenerator(){
                             roomListData.addAll(outData);
                             if (roomListLw != null) roomListLw.setItems(outItems.toArray(new String[0]));
                             updateRoomDetail();
-                            logNet("[C] 房间列表已汇总：" + outData.size() + " 个房间");
+                            logNetQuiet("[C] 房间列表已汇总：" + outData.size() + " 个房间");
                         } catch (Exception ignore) {}
                     }
                 });
@@ -34414,7 +34414,7 @@ private void refreshGenerator(){
     /** 切服加入：切到目标服务器（若不同）并在连上后自动进入指定房间。 */
     private void switchToServerAndJoin(int srvIdx, String room, boolean apply, String pass) {
         try {
-            if (room == null || room.trim().isEmpty()) { logNet( "[C] 请先在列表中选择一个房间。" ); return; }
+            if (room == null || room.trim().isEmpty()) { logNetQuiet( "[C] 请先在列表中选择一个房间。" ); return; }
             if (srvIdx < 0 || srvIdx >= serverEntries.size() || !isUsableEntry(serverEntries.get(srvIdx))) {
                 msgbox(z.srvinvalid); return;
             }
