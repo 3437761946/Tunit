@@ -22233,6 +22233,8 @@ private void refreshGenerator(){
                     if (!lay.isVisible()) srz.attribute("", "visible", "0");
                     if (lay.getOpacity() != 0)
                         srz.attribute("", "opacity", Float.toString(lay.getOpacity()));
+                    if (lay.getOffsetX() != 0) srz.attribute("", "offsetx", Float.toString(lay.getOffsetX()));
+                    if (lay.getOffsetY() != 0) srz.attribute("", "offsety", Float.toString(lay.getOffsetY()));
                     srz.attribute("", "width", Integer.toString(Tw));
                     srz.attribute("", "height", Integer.toString(Th));
 
@@ -22322,6 +22324,10 @@ private void refreshGenerator(){
                     srz.startTag(null, "objectgroup");
                     srz.attribute("", "name", lay.getName());
                     if (!lay.isVisible()) srz.attribute("", "visible", "false");
+                    if (lay.getOpacity() != 0)
+                        srz.attribute("", "opacity", Float.toString(lay.getOpacity()));
+                    if (lay.getOffsetX() != 0) srz.attribute("", "offsetx", Float.toString(lay.getOffsetX()));
+                    if (lay.getOffsetY() != 0) srz.attribute("", "offsety", Float.toString(lay.getOffsetY()));
 
                     if (lay.getObjects().size() > 0) {
                         for (int l = 0; l < lay.getObjects().size(); l++) {
@@ -24060,6 +24066,12 @@ private void refreshGenerator(){
                             if (myParser.getAttributeValue(null, "opacity") != null) {
                                 tempLayer.setOpacity(Float.parseFloat(myParser.getAttributeValue(null, "opacity")));
                             }
+                            if (myParser.getAttributeValue(null, "offsetx") != null) {
+                                tempLayer.setOffsetX(Float.parseFloat(myParser.getAttributeValue(null, "offsetx")));
+                            }
+                            if (myParser.getAttributeValue(null, "offsety") != null) {
+                                tempLayer.setOffsetY(Float.parseFloat(myParser.getAttributeValue(null, "offsety")));
+                            }
                             tempLayer.setName(myParser.getAttributeValue(null, "name"));
 
                         }
@@ -24374,6 +24386,12 @@ private void refreshGenerator(){
                                 }
                                 if (myParser.getAttributeValue(null, "opacity") != null) {
                                     tempLayer.setOpacity(Float.parseFloat(myParser.getAttributeValue(null, "opacity")));
+                                }
+                                if (myParser.getAttributeValue(null, "offsetx") != null) {
+                                    tempLayer.setOffsetX(Float.parseFloat(myParser.getAttributeValue(null, "offsetx")));
+                                }
+                                if (myParser.getAttributeValue(null, "offsety") != null) {
+                                    tempLayer.setOffsetY(Float.parseFloat(myParser.getAttributeValue(null, "offsety")));
                                 }
                                 tempLayer.setName(myParser.getAttributeValue(null, "name"));
                                 layers.add(tempLayer);
@@ -33122,7 +33140,9 @@ private void refreshGenerator(){
     // FNV-1a 64 位滚动哈希小工具（无额外分配，检测一次开销很低）
     private static long fnvUpd(long h, long v){ return (h ^ v) * 0x100000001b3L; }
     private static long fnvStr(long h, String s){
-        if (s == null) return fnvUpd(h, 0L);
+        // null 与 "" 视为等价：地图保存/加载往返会把缺失的名称/类型由 "" 变成 null（或反之），
+        // 若区分二者，会导致“一进房就判不同步”的误报。
+        if (s == null) s = "";
         for (int i = 0; i < s.length(); i++) h = fnvUpd(h, s.charAt(i));
         return fnvUpd(h, 0xffffL);
     }
@@ -33212,10 +33232,14 @@ private void refreshGenerator(){
                         c = fnvUpd(c, o.getGid());                       // 瓦片对象 gid：缺失会导致仅此项不同却判为已同步
                         c = fnvUpd(c, (o.isWrap() ? 1L : 0L));           // wrap 标记
                         c = fnvUpd(c, qz(o.getX())); c = fnvUpd(c, qz(o.getY()));
-                        c = fnvUpd(c, qz(o.getW())); c = fnvUpd(c, qz(o.getH()));
+                        // 点对象不持久化宽高：加载端会补成 Tsw×Tsh，两端统一按 0 计，避免往返后误判
+                        String oshape = (o.getShape() == null) ? "" : o.getShape().trim();
+                        boolean isPt = oshape.equalsIgnoreCase("point");
+                        c = fnvUpd(c, isPt ? 0L : qz(o.getW()));
+                        c = fnvUpd(c, isPt ? 0L : qz(o.getH()));
                         c = fnvUpd(c, qz(o.getRotation()));
                         c = fnvStr(c, o.getName()); c = fnvStr(c, o.getType());
-                        c = fnvStr(c, o.getShape()); c = fnvStr(c, o.getText());
+                        c = fnvStr(c, oshape); c = fnvStr(c, o.getText());
                         java.util.List<com.badlogic.gdx.math.Vector2> pts = o.getPoints();
                         c = fnvUpd(c, (pts == null) ? 0 : pts.size());
                         if (pts != null) for (com.badlogic.gdx.math.Vector2 p2 : pts) {
