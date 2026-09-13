@@ -11766,6 +11766,15 @@ private void refreshGenerator(){
                 onlineWebGuard("https://github.com/wandsmire/NotTiled");
             }
         });
+
+        // 查看本项目（Tunit）源码仓库 —— GPLv3 义务：对外分发须提供完整对应源码
+        TextButton bTunit = new TextButton("查看本项目源码", skin);
+        bTunit.addListener(new ChangeListener() {
+            @Override
+            public void changed(ChangeEvent event, Actor actor) {
+                onlineWebGuard("https://github.com/3437761946/Tunit");
+            }
+        });
         //safe
         Label title = new Label("开源许可 / Open Source License", skin);
         Label label2 = new Label("本软件（Tunit）基于开源项目 NotTiled 开发并修改。\n"
@@ -11791,6 +11800,7 @@ private void refreshGenerator(){
         content.add(btiled).padTop(10).center().row();
         content.add(bGpl).center().row();
         content.add(bNotTiled).center().row();
+        content.add(bTunit).center().row();
         content.add(tLicenseBack).width(btnx).padTop(8).center().row();
 
         ScrollPane spLicense = new ScrollPane(content);
