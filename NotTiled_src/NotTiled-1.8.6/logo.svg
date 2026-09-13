@@ -1,0 +1,51 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Tunit logo - full (rounded dark badge + teal dot-matrix + isometric tile cluster) -->
+<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink"
+     width="512" height="512" viewBox="0 0 512 512">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#0e2a33"/>
+      <stop offset="0.55" stop-color="#0a1e26"/>
+      <stop offset="1" stop-color="#061319"/>
+    </linearGradient>
+    <radialGradient id="glow" cx="0.5" cy="0.5" r="0.5">
+      <stop offset="0" stop-color="#22e6c3" stop-opacity="0.24"/>
+      <stop offset="1" stop-color="#22e6c3" stop-opacity="0"/>
+    </radialGradient>
+    <linearGradient id="topFace" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#63f5db"/>
+      <stop offset="1" stop-color="#2ed2ab"/>
+    </linearGradient>
+    <linearGradient id="leftFace" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#12b391"/>
+      <stop offset="1" stop-color="#0a8a70"/>
+    </linearGradient>
+    <linearGradient id="rightFace" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#0e9c7f"/>
+      <stop offset="1" stop-color="#066953"/>
+    </linearGradient>
+    <pattern id="dots" width="42" height="42" patternUnits="userSpaceOnUse">
+      <circle cx="21" cy="21" r="3" fill="#43e6cb" fill-opacity="0.16"/>
+    </pattern>
+    <g id="cube">
+      <polygon points="-100,0 0,50 0,160 -100,110"
+               fill="url(#leftFace)" stroke="#04302a" stroke-width="2" stroke-opacity="0.6" stroke-linejoin="round"/>
+      <polygon points="0,50 100,0 100,110 0,160"
+               fill="url(#rightFace)" stroke="#04302a" stroke-width="2" stroke-opacity="0.6" stroke-linejoin="round"/>
+      <polygon points="0,-50 100,0 0,50 -100,0"
+               fill="url(#topFace)" stroke="#e0fff7" stroke-width="2.4" stroke-opacity="0.55" stroke-linejoin="round"/>
+    </g>
+  </defs>
+
+  <rect x="0" y="0" width="512" height="512" rx="116" fill="url(#bg)"/>
+  <rect x="0" y="0" width="512" height="512" rx="116" fill="url(#dots)"/>
+  <ellipse cx="256" cy="252" rx="232" ry="214" fill="url(#glow)"/>
+
+  <g transform="translate(256,206)">
+    <use xlink:href="#cube" transform="translate(0,0)"/>
+    <use xlink:href="#cube" transform="translate(0,-110)"/>
+    <use xlink:href="#cube" transform="translate(100,50)"/>
+    <use xlink:href="#cube" transform="translate(-100,50)"/>
+    <use xlink:href="#cube" transform="translate(0,100)"/>
+  </g>
+</svg>

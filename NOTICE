@@ -1,0 +1,36 @@
+Tunit — NOTICE
+================
+
+本文件列出本项目（Tunit）的来源、署名与许可信息。
+
+1) 上游项目
+   名称 : NotTiled
+   仓库 : https://github.com/wandsmire/NotTiled
+   作者 : Reza Mirwanda <reza@mirwanda.com>
+   许可 : GNU General Public License v3.0 or later (GPLv3+)
+   说明 : NotTiled 是一个独立实现的瓦片地图编辑器；
+          它受 Tiled Map Editor 启发，但并非基于 Tiled 源码。
+
+2) 灵感与致谢
+   名称 : Tiled Map Editor
+   站点 : https://www.mapeditor.org
+   作者 : Thorbjørn Lindeijer
+   说明 : 仅作为灵感与参考致谢。Tiled 自身采用 GPLv2（或更新），
+          其许可证不适用于 NotTiled 或本项目代码。
+
+3) 本项目的修改
+   Tunit 在 NotTiled 原开源代码基础上进行了修改与功能增强
+   （例如：联机协作、服务端、界面与交互优化等）。
+
+4) 许可沿革
+   - Tunit 的底座为 NotTiled 1.8.6；该版本当时按 CC BY-SA 4.0 发布。
+   - 上游 NotTiled 现行为 GPLv3（或更新）。
+   - 因 CC BY-SA 4.0 与 GPLv3 兼容，本项目整体按 GPLv3（或更新）发布。
+
+5) 源码获取
+   本项目完整对应源码公开于：
+   https://github.com/3437761946/Tunit
+   （GPL 要求：对外分发时须提供完整对应源码。）
+
+6) 许可全文
+   见同目录 LICENSE 文件；或访问 https://www.gnu.org/licenses/gpl-3.0.html

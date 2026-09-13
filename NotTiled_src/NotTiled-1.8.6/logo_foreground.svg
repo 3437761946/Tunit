@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Tunit logo - foreground (transparent, glyph only, fits adaptive-icon safe zone) -->
+<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink"
+     width="512" height="512" viewBox="0 0 512 512">
+  <defs>
+    <linearGradient id="topFace" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#63f5db"/>
+      <stop offset="1" stop-color="#2ed2ab"/>
+    </linearGradient>
+    <linearGradient id="leftFace" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#12b391"/>
+      <stop offset="1" stop-color="#0a8a70"/>
+    </linearGradient>
+    <linearGradient id="rightFace" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#0e9c7f"/>
+      <stop offset="1" stop-color="#066953"/>
+    </linearGradient>
+    <g id="cube">
+      <polygon points="-100,0 0,50 0,160 -100,110"
+               fill="url(#leftFace)" stroke="#04302a" stroke-width="2.2" stroke-opacity="0.65" stroke-linejoin="round"/>
+      <polygon points="0,50 100,0 100,110 0,160"
+               fill="url(#rightFace)" stroke="#04302a" stroke-width="2.2" stroke-opacity="0.65" stroke-linejoin="round"/>
+      <polygon points="0,-50 100,0 0,50 -100,0"
+               fill="url(#topFace)" stroke="#e8fffa" stroke-width="2.6" stroke-opacity="0.6" stroke-linejoin="round"/>
+    </g>
+  </defs>
+
+  <g transform="translate(256,256) scale(0.70) translate(0,-50)">
+    <use xlink:href="#cube" transform="translate(0,0)"/>
+    <use xlink:href="#cube" transform="translate(0,-110)"/>
+    <use xlink:href="#cube" transform="translate(100,50)"/>
+    <use xlink:href="#cube" transform="translate(-100,50)"/>
+    <use xlink:href="#cube" transform="translate(0,100)"/>
+  </g>
+</svg>

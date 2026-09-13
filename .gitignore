@@ -1,0 +1,47 @@
+# ===================== 通用忽略 =====================
+*.iml
+*.ipr
+*.iws
+.gradle/
+build/
+captures/
+.externalNativeBuild
+.cxx
+.DS_Store
+Thumbs.db
+hs_err_pid*
+
+# IDE 工作区设置（可能包含本机绝对路径等个人信息）
+/.idea/
+
+# ===================== 敏感凭据（绝不入库）=====================
+# SSH 私钥
+*.pem
+id_rsa*
+
+# 签名密钥：私钥一旦公开，任何人都能伪造/覆盖安装你的 App
+*.jks
+*.keystore
+/app/keystore/keystore.properties
+
+# 服务器真实地址：公开源码中仅保留占位符 0.0.0.0，
+# 真实 IP 放在本文件，构建期由 app/build.gradle.kts 注入，随发布包携带。
+/app/server.properties
+
+# 本机 SDK 路径
+local.properties
+
+# ===================== 开服包 / 部署产物（不随源码公开）=====================
+/release_server/
+
+# ===================== 临时 / 日志 / 发布包 =====================
+/_tmp/
+/_tmp_cls/
+*.log
+*.err
+*.tmp
+*.bak
+*.apk
+*.zip
+# 例外：应用内置示例资源（构建时必需，绝不能忽略）
+!NotTiled_src/NotTiled-1.8.6/android/assets/sample.zip

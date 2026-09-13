@@ -1,0 +1,68 @@
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    package="com.mirwanda.nottiled"
+    xmlns:tools="http://schemas.android.com/tools">
+    <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" />
+    <uses-permission android:name="android.permission.VIBRATE" />
+    <uses-permission android:name="android.permission.INTERNET" />
+    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
+    <!-- 自动更新：允许拉起系统安装器安装下载好的新 APK（Android 8.0+ 需在设置里授权“安装未知应用”） -->
+    <uses-permission android:name="android.permission.REQUEST_INSTALL_PACKAGES" />
+    <!--uses-permission android:name="com.android.vending.BILLING" -->
+    <application
+        android:name="com.mirwanda.nottiled.Aplikasi"
+        android:allowBackup="false"
+        android:icon="@mipmap/ic_launcher"
+        android:isGame="true"
+        android:appCategory="game"
+        android:largeHeap="true"
+        android:label="@string/app_name"
+        android:theme="@style/GdxTheme"
+        android:resizeableActivity = "true"
+        android:hasFragileUserData="true"
+        android:requestLegacyExternalStorage="true">
+        
+        <!---
+        <meta-data android:name="com.google.android.gms.version"
+            android:value="@integer/google_play_services_version"/>
+        <meta-data android:name="com.google.android.gms.ads.APPLICATION_ID"
+            android:value="ca-app-pub-0329741361926795~9960638706"/>
+        -->
+        
+    <activity
+                 android:name="com.mirwanda.nottiled.MainActivity"
+                 android:label="@string/app_name"
+                 android:configChanges="keyboard|keyboardHidden|orientation|screenSize"
+        android:exported="true">
+                 <intent-filter>
+                     <action android:name="android.intent.action.MAIN" />
+                     <category android:name="android.intent.category.LAUNCHER" />
+                     
+                 </intent-filter>
+                 
+                 <!-- Register to handle email attachments -->
+                 <!-- WARNING: Do NOT use android:host="*" for these as they will not work properly -->
+                 <!-- Register to handle file opening -->
+                 <intent-filter>
+                     <data android:scheme="file"
+                         android:mimeType="*/*"
+                         android:pathPattern=".*\\.tmx"
+                         android:host="*"/>
+
+                     <action android:name="android.intent.action.VIEW" />
+
+                     <category android:name="android.intent.category.DEFAULT" />
+                     <category android:name="android.intent.category.BROWSABLE" />
+                 </intent-filter>
+                 
+             </activity>
+
+        <!-- 自动更新：把私有目录下已下载的 APK 以 content:// 形式分享给系统安装器（Android 7.0+ 禁止 file:// 方式） -->
+        <provider
+            android:name="com.mirwanda.nottiled.ApkFileProvider"
+            android:authorities="${applicationId}.update"
+            android:exported="false"
+            android:grantUriPermissions="true" />
+         </application>
+
+</manifest>

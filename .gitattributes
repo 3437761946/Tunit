@@ -1,0 +1,22 @@
+# 统一换行，避免跨平台 diff 噪声
+* text=auto eol=lf
+
+# 脚本换行：Unix 脚本用 LF，Windows 批处理用 CRLF
+gradlew   text eol=lf
+*.sh      text eol=lf
+*.bat     text eol=crlf
+
+# 二进制文件不做换行转换
+*.jar      binary
+*.jks      binary
+*.keystore binary
+*.so       binary
+*.apk      binary
+*.zip      binary
+*.png      binary
+*.jpg      binary
+*.jpeg     binary
+*.gif      binary
+*.ttf      binary
+*.otf      binary
+*.mid      binary
